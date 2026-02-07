@@ -1,0 +1,64 @@
+# Ruff configuration for Construtor de Questões
+# Documentation: https://docs.astral.sh/ruff/configuration/
+
+# Target Python 3.11
+target-version = "py311"
+
+# Line length
+line-length = 100
+
+[lint]
+# Enable rules
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "ANN",    # flake8-annotations
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "RUF",    # Ruff-specific rules
+    "TRY",    # tryceratops
+    "ARG",    # flake8-unused-arguments
+]
+
+# Ignore rules globally (apply to all files)
+ignore = [
+    "ANN101",  # Missing type annotation for self
+    "ANN102",  # Missing type annotation for cls
+]
+
+[lint.per-file-ignores]
+# Ignore specific rules in test files
+"tests/**/*.py" = [
+    "S101",      # Use of assert (normal in tests)
+    "ANN",       # All annotation rules (not critical in tests)
+    "PLR2004",   # Magic value comparison (acceptable in tests)
+    "ARG001",    # Unused function argument (fixtures, mocks)
+    "ARG002",    # Unused method argument (fixtures, mocks)
+    "PLC0415",   # Import outside top-level (ok in test helpers)
+    "TRY003",    # Long exception messages (ok in tests)
+    "EM101",     # String literals in exceptions (ok in tests)
+    "EM102",     # F-strings in exceptions (ok in tests)
+]
+
+# Be lenient with TRY300 (try-consider-else) - it's just a style suggestion
+"src/**/*.py" = [
+    "TRY300",    # Consider else block (optional style)
+]
+
+[lint.isort]
+# Organize imports
+known-first-party = ["construtor"]
+
+[format]
+# Use double quotes
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Unix line endings
+line-ending = "lf"
