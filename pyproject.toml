@@ -1,0 +1,32 @@
+[project]
+name = "construtor-de-questoes"
+version = "0.1.0"
+description = "Multi-agent pipeline for medical question generation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.79.0",
+    "openai>=2.17.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.3",
+    "pinecone>=8.0.0",
+    "pydantic>=2.12.5",
+    "streamlit>=1.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "ANN", "S", "B", "A", "COM", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "PD", "PGH", "PL", "TRY", "NPY", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
