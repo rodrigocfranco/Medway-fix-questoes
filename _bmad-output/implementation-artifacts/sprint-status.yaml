@@ -43,8 +43,8 @@ development_status:
   # Epic 1: Fundação do Projeto e Infraestrutura Core
   epic-1: in-progress
   1-1-inicializar-projeto-e-estrutura-base: done
-  1-2-criar-modelos-pydantic-de-dados: backlog
-  1-3-implementar-abstracao-de-provedores-llm: backlog
+  1-2-criar-modelos-pydantic-de-dados: done
+  1-3-implementar-abstracao-de-provedores-llm: review
   1-4-configurar-sqlite-para-persistencia-de-estado: backlog
   1-5-implementar-leitor-de-excel-de-input: backlog
   1-6-implementar-escritor-de-excel-de-output: backlog
