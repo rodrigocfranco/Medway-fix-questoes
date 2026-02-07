@@ -45,8 +45,12 @@ ignore = [
 ]
 
 # Be lenient with TRY300 (try-consider-else) - it's just a style suggestion
+# Allow dynamic exception messages for context-rich errors
 "src/**/*.py" = [
     "TRY300",    # Consider else block (optional style)
+    "TRY003",    # Long exception messages (needed for context)
+    "EM101",     # String literals in exceptions (needed for clarity)
+    "EM102",     # F-strings in exceptions (needed for context)
 ]
 
 [lint.isort]
