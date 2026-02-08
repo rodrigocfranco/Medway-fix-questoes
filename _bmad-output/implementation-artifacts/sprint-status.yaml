@@ -47,7 +47,7 @@ development_status:
   1-3-implementar-abstracao-de-provedores-llm: done
   1-4-configurar-sqlite-para-persistencia-de-estado: done
   1-5-implementar-leitor-de-excel-de-input: done
-  1-6-implementar-escritor-de-excel-de-output: backlog
+  1-6-implementar-escritor-de-excel-de-output: review
   1-7-criar-hierarquia-de-excecoes-customizadas: backlog
   1-8-configurar-gerenciamento-de-secrets-env: backlog
   epic-1-retrospective: optional
