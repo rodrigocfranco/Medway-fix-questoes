@@ -74,8 +74,8 @@ class ExcelWriter:
             limit: Optional maximum number of questions to export (for testing)
 
         Raises:
-            IOError: If database query fails, Excel write fails, or permission denied
-            ValueError: If output_path is not .xlsx extension
+            OSError: If database query fails, Excel write fails, or permission denied
+            ValueError: If output_path is not .xlsx extension or required columns missing
 
         Example:
             >>> writer = ExcelWriter()
@@ -110,13 +110,8 @@ class ExcelWriter:
 
             logger.info(f"Successfully exported {len(df)} questions to {output_path}")
 
-        except Exception:
-            # Cleanup temp file on error
-            if temp_file.exists():
-                temp_file.unlink()
-            raise
         finally:
-            # Ensure temp file is cleaned up
+            # Ensure temp file is cleaned up (runs always, even on exception)
             if temp_file.exists():
                 temp_file.unlink()
 
@@ -137,24 +132,36 @@ class ExcelWriter:
 
             conn = sqlite3.connect(self.db_path)
 
-            # Build query
-            query = "SELECT * FROM questions WHERE status='approved' ORDER BY id"
+            # Build query with parameterized LIMIT (prevent SQL injection)
+            query = "SELECT * FROM questions WHERE status=? ORDER BY id"
+            params = ["approved"]
             if limit:
-                query += f" LIMIT {limit}"
+                query += " LIMIT ?"
+                params.append(limit)
 
             # Load into DataFrame
-            df = pd.read_sql_query(query, conn)
+            df = pd.read_sql_query(query, conn, params=params)
             conn.close()
 
             logger.info(f"Loaded {len(df)} approved questions")
 
+            # Validate all required columns are present
+            missing_columns = set(self.COLUMN_ORDER) - set(df.columns)
+            if missing_columns:
+                raise ValueError(  # noqa: TRY301
+                    f"Database is missing required columns: {sorted(missing_columns)}. "
+                    f"Expected all 26 columns from COLUMN_ORDER."
+                )
+
             # Ensure column order and select only needed columns
             # Handle case where DB has extra columns (like id, status)
-            available_columns = [col for col in self.COLUMN_ORDER if col in df.columns]
-            df = df[available_columns]
+            df = df[self.COLUMN_ORDER]
 
             return df
 
+        except ValueError:
+            # Re-raise ValueError as-is (validation errors, not IO errors)
+            raise
         except sqlite3.Error as e:
             logger.exception("Failed to load questions from SQLite")
             raise OSError(f"Database error: {e}") from e
@@ -227,6 +234,9 @@ class ExcelWriter:
             wb.save(temp_path)
             wb.close()
 
-        except Exception as e:
-            logger.warning(f"Failed to apply header formatting: {e}")
+        except Exception:
+            logger.exception(
+                f"Failed to apply header formatting to {temp_path}. "
+                "Excel will be created without bold headers (non-critical)."
+            )
             # Don't raise - formatting is nice-to-have, not critical

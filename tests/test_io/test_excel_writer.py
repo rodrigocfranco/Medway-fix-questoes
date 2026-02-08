@@ -10,6 +10,24 @@ from openpyxl import load_workbook
 from construtor.io.excel_writer import ExcelWriter
 
 
+# Constants Validation Tests
+def test_column_order_has_exactly_26_columns():
+    """Test COLUMN_ORDER constant has exactly 26 columns as required."""
+    assert len(ExcelWriter.COLUMN_ORDER) == 26, (
+        f"COLUMN_ORDER must have exactly 26 columns, "
+        f"but has {len(ExcelWriter.COLUMN_ORDER)}"
+    )
+
+
+def test_column_order_has_no_duplicates():
+    """Test COLUMN_ORDER has no duplicate column names."""
+    columns = ExcelWriter.COLUMN_ORDER
+    assert len(columns) == len(set(columns)), (
+        f"COLUMN_ORDER has duplicate columns: "
+        f"{[col for col in columns if columns.count(col) > 1]}"
+    )
+
+
 @pytest.fixture
 def sample_db_with_approved_questions(tmp_path):
     """Create SQLite DB with sample approved questions."""
@@ -109,18 +127,46 @@ def sample_db_with_approved_questions(tmp_path):
 
 @pytest.fixture
 def empty_db(tmp_path):
-    """Create SQLite DB with no approved questions."""
+    """Create SQLite DB with no approved questions but all 26 required columns."""
     db_path = tmp_path / "empty.db"
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
+    # Create table with all 26 columns (but no data)
     cursor.execute("""
         CREATE TABLE questions (
             id INTEGER PRIMARY KEY,
             tema TEXT,
+            foco TEXT,
+            sub_foco TEXT,
+            periodo TEXT,
+            nivel_dificuldade INTEGER,
+            tipo_enunciado TEXT,
+            enunciado TEXT,
+            alternativa_a TEXT,
+            alternativa_b TEXT,
+            alternativa_c TEXT,
+            alternativa_d TEXT,
+            resposta_correta TEXT,
+            objetivo_educacional TEXT,
+            comentario_introducao TEXT,
+            comentario_visao_especifica TEXT,
+            comentario_alt_a TEXT,
+            comentario_alt_b TEXT,
+            comentario_alt_c TEXT,
+            comentario_alt_d TEXT,
+            comentario_visao_aprovado TEXT,
+            referencia_bibliografica TEXT,
+            suporte_imagem TEXT,
+            fonte_imagem TEXT,
+            modelo_llm TEXT,
+            rodadas_validacao INTEGER,
+            concordancia_comentador INTEGER,
             status TEXT
         )
     """)
+
+    # No data inserted - empty result set
 
     conn.commit()
     conn.close()
@@ -361,6 +407,49 @@ def test_cleanup_temp_file_on_write_failure(sample_db_with_approved_questions, t
     finally:
         # Restore permissions for cleanup
         os.chmod(test_dir, stat.S_IRWXU)
+
+
+def test_error_when_required_column_missing(tmp_path, output_excel_path):
+    """Test ValueError when database is missing required columns."""
+    # Arrange - Create DB with only some columns (missing many required columns)
+    db_path = tmp_path / "incomplete.db"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Create table with only 5 columns instead of 26
+    cursor.execute("""
+        CREATE TABLE questions (
+            id INTEGER PRIMARY KEY,
+            tema TEXT,
+            foco TEXT,
+            sub_foco TEXT,
+            status TEXT
+        )
+    """)
+
+    # Insert approved question with incomplete data
+    cursor.execute("""
+        INSERT INTO questions (tema, foco, sub_foco, status)
+        VALUES ('Cardiologia', 'ICC', 'Diagnóstico', 'approved')
+    """)
+
+    conn.commit()
+    conn.close()
+
+    writer = ExcelWriter(db_path=str(db_path))
+
+    # Act & Assert
+    with pytest.raises(ValueError) as exc_info:
+        writer.export_to_excel(str(output_excel_path))
+
+    # Verify error message mentions missing columns
+    error_msg = str(exc_info.value).lower()
+    assert "missing required columns" in error_msg
+    # Should mention at least some of the missing columns
+    assert any(
+        col in str(exc_info.value)
+        for col in ["periodo", "nivel_dificuldade", "enunciado", "alternativa_a"]
+    )
 
 
 # Integration Test
