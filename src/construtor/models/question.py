@@ -2,7 +2,66 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class FocoInput(BaseModel):
+    """Input data for a single foco (focus topic) from Excel.
+
+    This model represents a single row from the input Excel file,
+    containing the medical theme, specific focus, and target academic period.
+    It serves as the starting point for the question generation pipeline.
+    """
+
+    # MANDATORY: Strict validation - no type coercion
+    model_config = ConfigDict(strict=True)
+
+    # Required fields - Portuguese domain terminology
+    tema: str = Field(..., description="Tema médico (ex: Cardiologia)")
+    foco: str = Field(
+        ..., description="Foco específico dentro do tema (ex: Insuficiência Cardíaca)"
+    )
+    periodo: Literal["1º ano", "2º ano", "3º ano", "4º ano"] = Field(
+        ...,
+        description="Período acadêmico alvo (1º a 4º ano de medicina)",
+    )
+
+    @field_validator("periodo")
+    @classmethod
+    def validate_periodo(cls, v: str) -> str:
+        """Validate periodo is one of the allowed academic periods.
+
+        Args:
+            v: The periodo value to validate
+
+        Returns:
+            The validated periodo value
+
+        Raises:
+            ValueError: If periodo is not in allowed values
+        """
+        allowed = ["1º ano", "2º ano", "3º ano", "4º ano"]
+        if v not in allowed:
+            raise ValueError(f"periodo must be one of {allowed}, got '{v}'")
+        return v
+
+    @field_validator("tema", "foco")
+    @classmethod
+    def validate_non_empty(cls, v: str) -> str:
+        """Validate string fields are non-empty and non-whitespace.
+
+        Args:
+            v: The string value to validate
+
+        Returns:
+            The stripped string value
+
+        Raises:
+            ValueError: If string is empty or whitespace-only
+        """
+        if not v or v.isspace():
+            raise ValueError("Field cannot be empty or whitespace")
+        return v.strip()
 
 
 class CriadorOutput(BaseModel):

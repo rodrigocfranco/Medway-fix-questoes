@@ -37,6 +37,9 @@ env/
 # IDE
 .vscode/
 .idea/
+.cursor/
+.claude/
+.agent/
 *.swp
 *.swo
 

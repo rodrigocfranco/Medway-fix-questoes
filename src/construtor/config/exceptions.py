@@ -9,6 +9,7 @@ This module defines a structured exception hierarchy that enables:
 Exception Hierarchy:
     Exception
     └── PipelineError (base for all pipeline errors)
+        ├── ValidationError (data validation failed - non-retryable)
         ├── LLMProviderError (general LLM API errors)
         │   ├── LLMRateLimitError (rate limit exceeded - retryable)
         │   └── LLMTimeoutError (request timeout - retryable)
@@ -26,7 +27,7 @@ class PipelineError(Exception):
         context: Dict containing error context (model, question_id, etc.)
     """
 
-    def __init__(self, message: str, context: dict | None = None):
+    def __init__(self, message: str, context: dict | None = None) -> None:
         """Initialize PipelineError with message and optional context.
 
         Args:
@@ -35,6 +36,26 @@ class PipelineError(Exception):
         """
         super().__init__(message)
         self.context = context or {}
+
+
+class ValidationError(PipelineError):
+    """Data validation failed - non-retryable.
+
+    Raised when input data fails validation checks such as:
+    - Missing required columns in Excel files
+    - Invalid values (e.g., invalid periodo)
+    - Missing data in required fields
+    - Schema mismatches
+
+    These errors are non-retryable and require user intervention
+    to fix the input data.
+
+    Context should include:
+        - file_path: Path to file being validated (if applicable)
+        - column: Column name that failed validation (if applicable)
+        - row: Row number where validation failed (if applicable)
+        - value: Invalid value that caused the error (if applicable)
+    """
 
 
 class LLMProviderError(PipelineError):
