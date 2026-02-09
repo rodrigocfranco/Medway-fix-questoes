@@ -12,7 +12,7 @@ type coercion and ensure data integrity across agent boundaries.
 
 # ruff: noqa: I001
 # Question models
-from .question import CriadorOutput, QuestionRecord
+from .question import CriadorOutput, FocoInput, QuestionRecord, SubFocoInput
 
 # Feedback models
 from .feedback import ComentadorOutput, FeedbackEstruturado, ValidadorOutput
@@ -23,6 +23,9 @@ from .metrics import BatchMetrics, ModelComparison, QuestionMetrics
 # Pipeline models
 from .pipeline import BatchState, CheckpointResult, RetryContext
 
+# RAG models
+from .rag import RagDocument, RagQueryResult
+
 __all__ = [
     "BatchMetrics",
     "BatchState",
@@ -30,9 +33,13 @@ __all__ = [
     "ComentadorOutput",
     "CriadorOutput",
     "FeedbackEstruturado",
+    "FocoInput",
     "ModelComparison",
     "QuestionMetrics",
     "QuestionRecord",
+    "RagDocument",
+    "RagQueryResult",
     "RetryContext",
+    "SubFocoInput",
     "ValidadorOutput",
 ]

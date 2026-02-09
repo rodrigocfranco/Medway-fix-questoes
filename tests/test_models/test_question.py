@@ -1,9 +1,143 @@
-"""Tests for question models (CriadorOutput and QuestionRecord)."""
+"""Tests for question models (FocoInput, SubFocoInput, CriadorOutput, QuestionRecord)."""
 
 import pytest
 from pydantic import ValidationError
 
-from construtor.models.question import CriadorOutput, QuestionRecord
+from construtor.models.question import CriadorOutput, FocoInput, QuestionRecord, SubFocoInput
+
+
+# ============================================================================
+# FocoInput Tests
+# ============================================================================
+
+
+def test_foco_input_valid_data():
+    """Test FocoInput accepts valid data."""
+    foco = FocoInput(
+        tema="Cardiologia",
+        foco="Insuficiência Cardíaca",
+        periodo="3º ano",
+    )
+
+    assert foco.tema == "Cardiologia"
+    assert foco.foco == "Insuficiência Cardíaca"
+    assert foco.periodo == "3º ano"
+
+
+def test_foco_input_invalid_periodo():
+    """Test FocoInput rejects invalid periodo."""
+    with pytest.raises(ValidationError) as exc_info:
+        FocoInput(
+            tema="Cardiologia",
+            foco="Insuficiência Cardíaca",
+            periodo="5º ano",  # Invalid! Must be 1º-4º ano
+        )
+
+    errors = exc_info.value.errors()
+    assert any(error["loc"] == ("periodo",) for error in errors)
+
+
+def test_foco_input_empty_tema():
+    """Test FocoInput rejects empty tema."""
+    with pytest.raises(ValidationError) as exc_info:
+        FocoInput(
+            tema="",  # Empty string
+            foco="Insuficiência Cardíaca",
+            periodo="3º ano",
+        )
+
+    errors = exc_info.value.errors()
+    assert any(error["loc"] == ("tema",) for error in errors)
+
+
+def test_foco_input_whitespace_foco():
+    """Test FocoInput rejects whitespace-only foco."""
+    with pytest.raises(ValidationError) as exc_info:
+        FocoInput(
+            tema="Cardiologia",
+            foco="   ",  # Whitespace only
+            periodo="3º ano",
+        )
+
+    errors = exc_info.value.errors()
+    assert any(error["loc"] == ("foco",) for error in errors)
+
+
+def test_foco_input_strict_mode():
+    """Test FocoInput strict mode prevents type coercion."""
+    with pytest.raises(ValidationError):
+        FocoInput(
+            tema=123,  # Should be string, not int
+            foco="Test",
+            periodo="1º ano",
+        )
+
+
+# ============================================================================
+# SubFocoInput Tests
+# ============================================================================
+
+
+def test_subfoco_input_valid_data():
+    """Test SubFocoInput accepts valid data with all fields."""
+    subfoco = SubFocoInput(
+        tema="Cardiologia",
+        foco="Insuficiência Cardíaca",
+        sub_foco="Classificação funcional NYHA da IC",
+        periodo="3º ano",
+    )
+
+    assert subfoco.tema == "Cardiologia"
+    assert subfoco.foco == "Insuficiência Cardíaca"
+    assert subfoco.sub_foco == "Classificação funcional NYHA da IC"
+    assert subfoco.periodo == "3º ano"
+
+
+def test_subfoco_input_inherits_periodo_validation():
+    """Test SubFocoInput inherits periodo validation from FocoInput."""
+    with pytest.raises(ValidationError) as exc_info:
+        SubFocoInput(
+            tema="Cardiologia",
+            foco="Insuficiência Cardíaca",
+            sub_foco="Classificação NYHA",
+            periodo="5º ano",  # Invalid! Inherited validation from FocoInput
+        )
+
+    errors = exc_info.value.errors()
+    assert any(error["loc"] == ("periodo",) for error in errors)
+
+
+def test_subfoco_input_empty_sub_foco():
+    """Test SubFocoInput rejects empty sub_foco."""
+    with pytest.raises(ValidationError) as exc_info:
+        SubFocoInput(
+            tema="Cardiologia",
+            foco="Insuficiência Cardíaca",
+            sub_foco="",  # Empty string - should fail
+            periodo="3º ano",
+        )
+
+    errors = exc_info.value.errors()
+    assert any(error["loc"] == ("sub_foco",) for error in errors)
+
+
+def test_subfoco_input_whitespace_sub_foco():
+    """Test SubFocoInput rejects whitespace-only sub_foco."""
+    with pytest.raises(ValidationError) as exc_info:
+        SubFocoInput(
+            tema="Cardiologia",
+            foco="Insuficiência Cardíaca",
+            sub_foco="   ",  # Whitespace only - should fail
+            periodo="3º ano",
+        )
+
+    errors = exc_info.value.errors()
+    assert any(error["loc"] == ("sub_foco",) for error in errors)
+
+
+# ============================================================================
+# CriadorOutput Tests
+# ============================================================================
 
 
 def test_criador_output_valid_data():

@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from construtor.config.exceptions import OutputParsingError, ValidationError
+from construtor.config.exceptions import InputValidationError, OutputParsingError
 from construtor.io import ExcelReader
 from construtor.models.question import FocoInput
 
@@ -277,7 +277,7 @@ def test_missing_periodo_column_raises_validation_error(
     reader = ExcelReader()
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(excel_missing_periodo_column))
 
     error_msg = str(exc_info.value).lower()
@@ -293,7 +293,7 @@ def test_missing_tema_column_raises_validation_error(
     reader = ExcelReader()
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(excel_missing_tema_column))
 
     error_msg = str(exc_info.value).lower()
@@ -346,7 +346,7 @@ def test_invalid_periodo_raises_validation_error(excel_invalid_periodo: Path) ->
     reader = ExcelReader()
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(excel_invalid_periodo))
 
     error_msg = str(exc_info.value)
@@ -368,7 +368,7 @@ def test_missing_data_in_tema_raises_validation_error(
     reader = ExcelReader()
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(excel_missing_data))
 
     error_msg = str(exc_info.value)
@@ -383,7 +383,7 @@ def test_whitespace_only_treated_as_missing(excel_whitespace_only: Path) -> None
     reader = ExcelReader()
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(excel_whitespace_only))
 
     error_msg = str(exc_info.value)
@@ -410,14 +410,14 @@ def test_file_not_found_raises_error(tmp_path: Path) -> None:
 
 
 def test_invalid_excel_format_raises_parsing_error(tmp_path: Path) -> None:
-    """Test ValidationError for non-Excel file extension (.txt)."""
+    """Test InputValidationError for non-Excel file extension (.txt)."""
     # Arrange
     reader = ExcelReader()
     txt_file = tmp_path / "not_excel.txt"
     txt_file.write_text("This is not an Excel file")
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(txt_file))
 
     error_msg = str(exc_info.value).lower()
@@ -512,7 +512,7 @@ def test_multiple_validation_errors_reported(tmp_path: Path) -> None:
     df.to_excel(file_path, index=False, engine="openpyxl")
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(InputValidationError) as exc_info:
         reader.read_input(str(file_path))
 
     error_msg = str(exc_info.value)

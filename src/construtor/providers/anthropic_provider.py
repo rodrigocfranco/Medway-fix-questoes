@@ -197,7 +197,7 @@ class AnthropicProvider:
             msg = f"Request timeout: {model} exceeded {self.timeout}s limit"
             raise LLMTimeoutError(
                 msg,
-                context={"model": model, "timeout": self.timeout},
+                modelo=model,
             ) from e
 
     async def _call_api(
@@ -240,12 +240,8 @@ class AnthropicProvider:
                 except (json.JSONDecodeError, ValidationError) as e:
                     msg = f"Failed to parse response to {response_model.__name__}: {e}"
                     raise OutputParsingError(
-                        msg,
-                        context={
-                            "model": model,
-                            "response_text": content_text[:200],
-                            "expected_schema": response_model.__name__,
-                        },
+                        f"{msg} | Response preview: {content_text[:200]}",
+                        modelo=model,
                     ) from e
             else:
                 content = content_text
@@ -267,24 +263,24 @@ class AnthropicProvider:
             }
 
         except Exception as e:
+            # Re-raise custom exceptions first to prevent misclassification
+            if isinstance(e, (LLMRateLimitError, LLMTimeoutError, OutputParsingError)):
+                raise
+
             # Check if error message contains rate limit indicators
             error_str = str(e).lower()
             if "rate_limit" in error_str or "429" in error_str:
                 msg = f"Anthropic rate limit exceeded: {e}"
                 raise LLMRateLimitError(
-                    msg,
-                    context={"model": model, "provider": "anthropic"},
+                    f"{msg} (provider: anthropic)",
+                    modelo=model,
                 ) from e
-
-            # Check if it's already one of our custom exceptions
-            if isinstance(e, (LLMRateLimitError, LLMTimeoutError, OutputParsingError)):
-                raise
 
             # General API error
             msg = f"Anthropic API error: {e}"
             raise LLMProviderError(
-                msg,
-                context={"model": model, "provider": "anthropic", "error": str(e)},
+                f"{msg} (provider: anthropic, error: {e})",
+                modelo=model,
             ) from e
 
     def _calculate_cost(

@@ -186,7 +186,7 @@ class OpenAIProvider:
             msg = f"Request timeout: {model} exceeded {self.timeout}s limit"
             raise LLMTimeoutError(
                 msg,
-                context={"model": model, "timeout": self.timeout},
+                modelo=model,
             ) from e
         else:
             # Calculate latency
@@ -245,25 +245,29 @@ class OpenAIProvider:
             # Rate limit - will be retried
             msg = f"OpenAI rate limit exceeded: {e}"
             raise LLMRateLimitError(
-                msg,
-                context={"model": model, "provider": "openai"},
+                f"{msg} (provider: openai)",
+                modelo=model,
             ) from e
 
         except Exception as e:
+            # Re-raise custom exceptions first to prevent misclassification
+            if isinstance(e, (LLMRateLimitError, LLMTimeoutError)):
+                raise
+
             # Check if error message contains rate limit indicators
             error_str = str(e).lower()
             if "rate limit" in error_str or "429" in error_str:
                 msg = f"OpenAI rate limit exceeded: {e}"
                 raise LLMRateLimitError(
-                    msg,
-                    context={"model": model, "provider": "openai"},
+                    f"{msg} (provider: openai)",
+                    modelo=model,
                 ) from e
 
             # General API error
             msg = f"OpenAI API error: {e}"
             raise LLMProviderError(
-                msg,
-                context={"model": model, "provider": "openai", "error": str(e)},
+                f"{msg} (provider: openai, error: {e})",
+                modelo=model,
             ) from e
 
     def _calculate_cost(

@@ -12,7 +12,7 @@ import pandas as pd
 from openpyxl.utils.exceptions import InvalidFileException
 from pydantic import ValidationError as PydanticValidationError
 
-from construtor.config.exceptions import OutputParsingError, ValidationError
+from construtor.config.exceptions import InputValidationError, OutputParsingError
 from construtor.models.question import FocoInput
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class ExcelReader:
 
         Raises:
             FileNotFoundError: If file doesn't exist or is not a file
-            ValidationError: If columns missing, periodo invalid, or data missing
+            InputValidationError: If columns missing, periodo invalid, or data missing
             OutputParsingError: If Excel format is invalid or cannot be read
 
         Example:
@@ -106,7 +106,7 @@ class ExcelReader:
 
         Raises:
             FileNotFoundError: If file doesn't exist or is not a file
-            ValidationError: If file extension is not .xlsx or .xlsm
+            InputValidationError: If file extension is not .xlsx or .xlsm
         """
         path = Path(file_path)
 
@@ -118,7 +118,7 @@ class ExcelReader:
 
         # Validate file extension
         if path.suffix.lower() not in [".xlsx", ".xlsm"]:
-            raise ValidationError(
+            raise InputValidationError(
                 f"Invalid file format: {path.suffix}. "
                 f"Expected Excel file with .xlsx or .xlsm extension."
             )
@@ -133,7 +133,7 @@ class ExcelReader:
             file_path: Path to Excel file (for error messages)
 
         Raises:
-            ValidationError: If required columns are missing
+            InputValidationError: If required columns are missing
         """
         # Normalize column names: lowercase and strip whitespace
         actual_columns = {col.strip().lower() for col in df.columns}
@@ -146,7 +146,7 @@ class ExcelReader:
                 f"Missing columns {missing_columns} in {file_path}. "
                 f"Expected: {self.REQUIRED_COLUMNS}. Found: {list(df.columns)}"
             )
-            raise ValidationError(
+            raise InputValidationError(
                 f"Missing required columns: {sorted(missing_columns)}. "
                 f"Expected: {self.REQUIRED_COLUMNS}. Found: {list(df.columns)}"
             )
@@ -184,7 +184,7 @@ class ExcelReader:
             file_path: Path to Excel file (for error messages)
 
         Raises:
-            ValidationError: If invalid periodo values are found
+            InputValidationError: If invalid periodo values are found
         """
         # Check all values against valid periodos
         invalid_mask = ~df["periodo"].isin(self.VALID_PERIODOS)
@@ -201,7 +201,7 @@ class ExcelReader:
             )
 
             logger.error(error_msg)
-            raise ValidationError(error_msg)
+            raise InputValidationError(error_msg)
 
     def _validate_no_missing_data(self, df: pd.DataFrame, file_path: str) -> None:
         """Validate no missing data in required columns.
@@ -211,7 +211,7 @@ class ExcelReader:
             file_path: Path to Excel file (for error messages)
 
         Raises:
-            ValidationError: If missing data is found
+            InputValidationError: If missing data is found
         """
         for col in self.REQUIRED_COLUMNS:
             missing_mask = df[col].isna()
@@ -222,7 +222,7 @@ class ExcelReader:
                 error_msg = f"Missing data in column '{col}' at rows {row_numbers} in {file_path}"
 
                 logger.error(error_msg)
-                raise ValidationError(error_msg)
+                raise InputValidationError(error_msg)
 
     def _dataframe_to_focos(self, df: pd.DataFrame, file_path: str) -> list[FocoInput]:
         """Convert validated DataFrame to list of FocoInput models.
@@ -235,7 +235,7 @@ class ExcelReader:
             List of FocoInput objects
 
         Raises:
-            ValidationError: If Pydantic validation fails for any row
+            InputValidationError: If Pydantic validation fails for any row
         """
         focos: list[FocoInput] = []
 
@@ -251,6 +251,6 @@ class ExcelReader:
                 row_num = idx + 2  # Excel row number (header + 0-index)
                 error_msg = f"Validation failed at row {row_num} in {file_path}: {e}"
                 logger.exception(error_msg)
-                raise ValidationError(error_msg) from e
+                raise InputValidationError(error_msg) from e
 
         return focos
